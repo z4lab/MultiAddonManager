@@ -54,6 +54,16 @@ jobs:
           ref: cs2
           path: hl2sdk-cs2
 
+      - name: Patch SDK for CS2 1.41.9.2
+        # 1.41.9.2 added IVEngineServer2::IsSpawnGroupLoadedForClient after MakeSpawnGroupActive (s2sdk 2261b6d),
+        # without it every engine call past that slot is off by one
+        shell: bash
+        run: |
+          f=hl2sdk-cs2/public/engine2/ivengineserver2.h
+          grep -q IsSpawnGroupLoadedForClient "$f" || sed -i '/MakeSpawnGroupActive(/a\    virtual bool IsSpawnGroupLoadedForClient( CPlayerSlot nSlot, SpawnGroupHandle_t spawnGroup ) = 0;' "$f"
+          grep -n -A1 'MakeSpawnGroupActive(' "$f"
+          test "$(grep -c IsSpawnGroupLoadedForClient "$f")" = 1
+
       - name: Checkout AMBuild
         if: matrix.os == 'windows-latest'
         uses: actions/checkout@v7
